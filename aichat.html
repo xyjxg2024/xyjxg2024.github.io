@@ -14,7 +14,6 @@
             margin: 0;
             min-height: 100vh;
             position: relative;
-            /* 添加此行以支持绝对定位 */
         }
 
         /* ================= 登录注册样式 ================= */
@@ -114,24 +113,26 @@
         }
 
         .back-button {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            padding: 0.5rem 1rem;
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #3d8c53;
+            padding: 0.6rem 1.2rem;
             border: none;
-            border-radius: 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            text-decoration: none;
             font-size: 1rem;
             cursor: pointer;
             transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            text-decoration: none;
-            color: white;
+            z-index: 100;
         }
 
         .back-button:hover {
-            background: rgba(255, 255, 255, 0.3);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 1);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
         }
 
         .logout-button {
@@ -293,15 +294,13 @@
 
     <!-- 主内容 -->
     <div class="main-content">
+        <!-- 左上角固定返回主页按钮 -->
+        <a href="index.html" class="back-button">← 返回主页</a>
+
         <h1>“农场管家”农业大数据分析平台</h1>
 
         <!-- 按钮容器 -->
         <div class="button-container">
-            <!-- 返回按钮 -->
-            <a href="index.html" class="back-button">
-                ← 返回主界面
-            </a>
-
             <!-- 退出登录按钮 -->
             <button class="logout-button" onclick="logoutAndRefresh()">退出登录</button>
         </div>
@@ -531,17 +530,17 @@ ${weather.forecast.map(d =>
 
         async function handleSend() {
             try {
-                const rawInput = uiController.elements.input.value.trim();
+                const rawInput = uiController。elements。input。value.trim();
                 if (!rawInput) return;
 
-                const safeInput = utils.sanitizeInput(rawInput);
-                uiController.addMessage(safeInput, true);
+                const safeInput = utils。sanitizeInput(rawInput);
+                uiController.addMessage(safeInput， true);
                 uiController.clearInput();
                 uiController.toggleButtonState(true);
                 uiController.showLoading();
 
                 let weatherData = null;
-                if (utils.isWeatherQuestion(safeInput)) {
+                if (utils。isWeatherQuestion(safeInput)) {
                     const city = utils.extractCity(safeInput);
                     if (city) weatherData = await weatherServiceMain.fetch(city);
                 }
@@ -550,22 +549,22 @@ ${weather.forecast.map(d =>
                 if (response) {
                     uiController.addMessage(response, false);
                 } else {
-                    uiController.addMessage('⚠️ 服务暂时不可用，请稍后再试', false);
+                    uiController。addMessage('⚠️ 服务暂时不可用，请稍后再试'， false);
                 }
             } catch (error) {
-                uiController.addMessage('⚠️ 系统异常，请稍后重试', false);
+                uiController。addMessage('⚠️ 系统异常，请稍后重试'， false);
             } finally {
-                uiController.toggleButtonState(false);
+                uiController。toggleButtonState(false);
             }
         }
 
         function logoutAndRefresh() {
             // 清除本地存储的用户信息
-            localStorage.removeItem('isLoggedIn');
+            localStorage。removeItem('isLoggedIn');
             localStorage.removeItem('user');
 
             // 刷新页面
-            location.reload();
+            location。reload();
         }
 
         function initEventListeners() {
