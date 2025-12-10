@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能土壤分析系统</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.2/dist/echarts.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #2a6b3c;
+            --secondary-color: #8bc34a;
+            --background: linear-gradient(135deg, #f3f9f1 0%, #e6f4ea 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+
+        body {
+            background: var(--background);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .dashboard {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+            padding: 2rem;
+        }
+
+        /* 健康评分模块 */
+        .health-score {
+            position: relative;
+            /* 添加此行以支持绝对定位 */
+            text-align: center;
+            padding: 2rem;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+        }
+
+        /* 返回按钮样式 */
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 15px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+
+        .back-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .score-value {
+            font-size: 4rem;
+            font-weight: bold;
+            margin: 1rem 0;
+        }
+
+        /* 实时数据模块 */
+        .sensor-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .sensor-card {
+            background: rgba(248, 255, 249, 0.9);
+            padding: 1.5rem;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s;
+        }
+
+        .sensor-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .param-label {
+            color: #666;
+            font-size: 0.95rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .param-value {
+            color: var(--primary-color);
+            font-size: 2rem;
+            font-weight: 500;
+        }
+
+        /* 可视化分析模块 */
+        .visualization-container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            height: 600px;
+            margin-bottom: 3rem;
+        }
+
+        .chart-panel {
+            background: rgba(248, 255, 249, 0.9);
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        #nutrientChart,
+        #soilProfile3d {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* 时间选择器 */
+        .time-selector {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .time-btn {
+            padding: 0.5rem 1.5rem;
+            border: 2px solid #e0f0e5;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .time-btn.active {
+            background: var(--secondary-color);
+            border-color: var(--secondary-color);
+            color: white;
+        }
+
+        /* 建议模块 */
+        .advice-panel {
+            background: rgba(248, 255, 249, 0.9);
+            padding: 2rem;
+            border-radius: 15px;
+            margin-top: 2rem;
+        }
+
+        .recommendation {
+            padding: 1rem;
+            background: white;
+            border-radius: 10px;
+            margin: 1rem 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        /* 手动输入按钮样式 */
+        .manual-input-btn {
+            background: linear-gradient(45deg, var(--secondary-color), #7cb342);
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            font-size: 1rem;
+            font-weight: 500;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin-top: 2rem;
+        }
+
+        .manual-input-btn:hover {
+            background: #7cb342;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard">
+        <!-- 健康评分 -->
+        <div class="health-score">
+            <!-- 返回按钮 -->
+            <a href="index.html" class="back-button">
+                ← 返回主界面
+            </a>
+            <h2>🏆 土壤健康综合评分</h2>
+            <div class="score-value" id="healthScore">86</div>
+            <p id="healthStatus">当前状态：优良 | 适宜种植水稻</p>
+        </div>
+
+        <!-- 实时数据 -->
+        <div class="time-selector">
+            <button class="time-btn active">实时</button>
+            <button class="time-btn">24小时</button>
+            <button class="time-btn">7天</button>
+        </div>
+
+        <div class="sensor-grid">
+            <div class="sensor-card">
+                <div class="param-label">🌱 有机质含量</div>
+                <div class="param-value" id="organicMatter">2.8%</div>
+                <div class="param-label" style="margin-top:1rem">正常范围: 2.5-3.5%</div>
+            </div>
+            <div class="sensor-card">
+                <div class="param-label">⚖️ pH值</div>
+                <div class="param-value" id="pHValue">6.5</div>
+                <div class="param-label" style="margin-top:1rem">酸碱度: 微酸性</div>
+            </div>
+            <div class="sensor-card">
+                <div class="param-label">🔄 电导率</div>
+                <div class="param-value" id="conductivity">1.2 mS/cm</div>
+                <div class="param-label" style="margin-top:1rem">盐分含量: 正常</div>
+            </div>
+            <div class="sensor-card">
+                <div class="param-label">💧 含水量</div>
+                <div class="param-value" id="waterContent">62%</div>
+                <div class="param-label" style="margin-top:1rem">灌溉建议: 暂不需要</div>
+            </div>
+        </div>
+
+        <!-- 可视化分析 -->
+        <div class="visualization-container">
+            <div class="chart-panel">
+                <h3>📊 养分分析雷达图</h3>
+                <div class="nutrient-chart" id="nutrientChart"></div>
+            </div>
+            <div class="chart-panel">
+                <h3>🗺️ 土壤剖面结构</h3>
+                <div id="soilProfile3d"></div>
+            </div>
+        </div>
+
+        <!-- 智能建议 -->
+        <div class="advice-panel">
+            <h3>💡 改良建议</h3>
+            <div class="recommendation">
+                <div class="param-label">🌾 施肥建议</div>
+                <p id="fertilizerAdvice">建议增施有机肥 500kg/亩，补充氮肥 10kg/亩</p>
+            </div>
+            <div class="recommendation">
+                <div class="param-label">🚜 耕作建议</div>
+                <p id="tillageAdvice">建议进行深度翻耕（30-40cm），改善土壤透气性</p>
+            </div>
+            <div class="recommendation">
+                <div class="param-label">💦 灌溉建议</div>
+                <p id="irrigationAdvice">当前含水量适宜，未来72小时无需灌溉</p>
+            </div>
+        </div>
+
+        <!-- 手动输入按钮 -->
+        <button class="manual-input-btn" onclick="location.href='groundinput.html'">手动输入</button>
+    </div>
+
+    <script>
+        // 生成随机数据
+        function generateRandomData() {
+            // 健康评分 (70-95)
+            const healthScore = Math.floor(Math.random() * 26) + 70;
+            document.getElementById('healthScore').textContent = healthScore;
+
+            // 根据健康评分更新状态描述
+            let healthStatus;
+            if (healthScore >= 85) {
+                healthStatus = '当前状态：优良 | 适宜种植水稻';
+            } else if (healthScore >= 70) {
+                healthStatus = '当前状态：良好 | 适宜种植大部分作物';
+            } else {
+                healthStatus = '当前状态：一般 | 需要改良后种植';
+            }
+            document.getElementById('healthStatus').textContent = healthStatus;
+
+            // 有机质含量 (2.5-3.5%)
+            const organicMatter = (Math.random() * 1.0 + 2.5).toFixed(1);
+            document.getElementById('organicMatter').textContent = organicMatter + '%';
+
+            // pH值 (5.5-7.5)
+            const pHValue = (Math.random() * 2.0 + 5.5).toFixed(1);
+            document.getElementById('pHValue').textContent = pHValue;
+
+            // 电导率 (0.8-1.6 mS/cm)
+            const conductivity = (Math.random() * 0.8 + 0.8).toFixed(1);
+            document.getElementById('conductivity').textContent = conductivity + ' mS/cm';
+
+            // 含水量 (50-75%)
+            const waterContent = Math.floor(Math.random() * 26) + 50;
+            document.getElementById('waterContent').textContent = waterContent + '%';
+
+            // 更新灌溉建议
+            let irrigationAdvice;
+            if (waterContent >= 70) {
+                irrigationAdvice = '当前含水量过高，建议排水';
+            } else if (waterContent >= 60) {
+                irrigationAdvice = '当前含水量适宜，未来72小时无需灌溉';
+            } else {
+                irrigationAdvice = '当前含水量较低，建议适量灌溉';
+            }
+            document.getElementById('irrigationAdvice').textContent = irrigationAdvice;
+
+            // 更新施肥建议
+            updateFertilizerAdvice();
+
+            // 更新耕作建议
+            updateTillageAdvice();
+        }
+
+        // 更新施肥建议
+        function updateFertilizerAdvice() {
+            const organicMatter = parseFloat(document.getElementById('organicMatter').textContent);
+            const pHValue = parseFloat(document.getElementById('pHValue').textContent);
+            const conductivity = parseFloat(document.getElementById('conductivity').textContent.split(' ')[0]);
+
+            let fertilizerAdvice;
+            if (organicMatter < 2.5) {
+                fertilizerAdvice = '建议增施有机肥 800kg/亩，补充氮肥 15kg/亩，改善土壤肥力';
+            } else if (organicMatter < 3.0) {
+                fertilizerAdvice = '建议增施有机肥 500kg/亩，补充氮肥 10kg/亩';
+            } else {
+                fertilizerAdvice = '土壤有机质含量良好，维持现有施肥量即可';
+            }
+
+            if (pHValue < 6.0) {
+                fertilizerAdvice += '，同时建议施用石灰改良酸性土壤';
+            } else if (pHValue > 7.0) {
+                fertilizerAdvice += '，同时建议施用硫磺改良碱性土壤';
+            }
+
+            if (conductivity > 1.5) {
+                fertilizerAdvice += '，注意降低盐分含量，避免过度施肥';
+            }
+
+            document.getElementById('fertilizerAdvice').textContent = fertilizerAdvice;
+        }
+
+        // 更新耕作建议
+        function updateTillageAdvice() {
+            const waterContent = parseFloat(document.getElementById('waterContent').textContent.split('%')[0]);
+            const organicMatter = parseFloat(document.getElementById('organicMatter').textContent.split('%')[0]);
+
+            let tillageAdvice;
+            if (waterContent > 70) {
+                tillageAdvice = '土壤含水量过高，建议适当排水后进行浅耕（15-20cm），改善透气性';
+            } else if (waterContent < 60) {
+                tillageAdvice = '土壤含水量较低，建议深耕（30-40cm）并结合灌溉，提升保水能力';
+            } else {
+                if (organicMatter < 2.5) {
+                    tillageAdvice = '建议进行中耕（20-30cm），结合有机肥施用，提升土壤肥力';
+                } else {
+                    tillageAdvice = '建议进行常规耕作（20-30cm），保持土壤结构良好';
+                }
+            }
+
+            document.getElementById('tillageAdvice').textContent = tillageAdvice;
+        }
+
+        // 3D土壤剖面初始化
+        function init3DView() {
+            const container = document.getElementById('soilProfile3d');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            // 创建场景
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+
+            renderer.setSize(width, height);
+            renderer.setClearColor(0xf8faf9);
+            container.appendChild(renderer.domElement);
+
+            // 创建土壤层
+            const layers = [
+                { color: 0x8B4513, height: 2, name: '表层土壤' },
+                { color: 0xA0522D, height: 3, name: '耕作层' },
+                { color: 0xCD853F, height: 5, name: '底土层' }
+            ];
+
+            layers.forEach((layer, index) => {
+                const geometry = new THREE.BoxGeometry(4, layer.height, 4);
+                const material = new THREE.MeshPhongMaterial({
+                    color: layer.color,
+                    transparent: true,
+                    opacity: 0.8
+                });
+                const cube = new THREE.Mesh(geometry, material);
+                cube.position.y = -index * layer.height;
+                scene.add(cube);
+            });
+
+            // 光照设置
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(5, 5, 5);
+            scene.add(directionalLight);
+
+            // 相机位置
+            camera.position.set(8, 8, 8);
+            camera.lookAt(0, 0, 0);
+
+            // 动画循环
+            function animate() {
+                requestAnimationFrame(animate);
+                renderer.render(scene, camera);
+            }
+            animate();
+        }
+
+        // 养分分析图表
+        function initNutrientChart() {
+            const chart = echarts.init(document.getElementById('nutrientChart'));
+            const option = {
+                tooltip: { trigger: 'axis' },
+                radar: {
+                    indicator: [
+                        { name: '氮含量', max: 200 },
+                        { name: '磷含量', max: 100 },
+                        { name: '钾含量', max: 300 },
+                        { name: '有机质', max: 5 },
+                        { name: '微生物', max: 100 }
+                    ],
+                    shape: 'polygon',
+                    splitArea: { show: false },
+                    axisLine: { lineStyle: { color: 'rgba(61, 140, 83, 0.3)' } }
+                },
+                series: [{
+                    type: 'radar',
+                    data: [{
+                        value: [
+                            Math.floor(Math.random() * 101) + 100, // 氮含量 (100-200)
+                            Math.floor(Math.random() * 51) + 50,   // 磷含量 (50-100)
+                            Math.floor(Math.random() * 201) + 100, // 钾含量 (100-300)
+                            (Math.random() * 3.0 + 2.0).toFixed(1), // 有机质 (2.0-5.0)
+                            Math.floor(Math.random() * 76) + 25    // 微生物 (25-100)
+                        ],
+                        name: '当前值',
+                        areaStyle: { color: 'rgba(61, 140, 83, 0.3)' },
+                        lineStyle: { color: '#3d8c53' }
+                    }]
+                }]
+            };
+            chart.setOption(option);
+        }
+
+        // 时间选择交互
+        function initTimeSelector() {
+            document.querySelectorAll('.time-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    document.querySelectorAll('.time-btn').forEach(b => {
+                        b.classList.remove('active');
+                        b.style.transform = 'none';
+                    });
+                    this.classList.add('active');
+                    this.style.transform = 'scale(1.05)';
+
+                    // 更新数据
+                    generateRandomData();
+
+                    // 这里可以添加数据更新逻辑
+                    console.log('选择时间段:', this.textContent);
+                });
+            });
+        }
+
+        // 初始化
+        window.onload = () => {
+            init3DView();
+            initNutrientChart();
+            initTimeSelector();
+            generateRandomData(); // 初始加载时生成随机数据
+        };
+    </script>
+</body>
+
+</html>

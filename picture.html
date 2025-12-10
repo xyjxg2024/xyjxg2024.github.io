@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>实时气象监测 - 农场管家</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.2/dist/echarts.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f0fff1 0%, #e1f4e8 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            position: relative;
+            /* 添加此行以支持绝对定位 */
+        }
+
+        /* 返回按钮样式 */
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: #8bc34a;
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 15px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .back-button:hover {
+            background: #7cb342;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(139, 195, 74, 0.2);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .title {
+            color: #3d8c53;
+            font-size: 2.2rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .city-selector {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+
+        #cityInput {
+            padding: 0.8rem 1.2rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            width: 300px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        #cityInput:focus {
+            border-color: #8bc34a;
+            outline: none;
+            box-shadow: 0 0 8px rgba(139, 195, 74, 0.3);
+        }
+
+        #searchButton {
+            background: #8bc34a;
+            color: white;
+            border: none;
+            padding: 0.8rem 2rem;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #searchButton:hover {
+            background: #7cb342;
+            transform: translateY(-2px);
+        }
+
+        #searchButton:active {
+            transform: translateY(0);
+        }
+
+        #weatherChart {
+            height: 600px;
+            width: 100%;
+            margin: 2rem 0;
+            background: #fff;
+            border-radius: 12px;
+            padding: 15px;
+        }
+
+        .weather-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .info-card {
+            background: #f8fff9;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s;
+        }
+
+        .info-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .info-title {
+            color: #666;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-value {
+            color: #3d8c53;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .error-message {
+            color: #dc3545;
+            background: #ffecec;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            display: none;
+            animation: shake 0.5s;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 1rem;
+            color: #8bc34a;
+            display: none;
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-10px);
+            }
+
+            75% {
+                transform: translateX(10px);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- 返回按钮 -->
+        <a href="index.html" class="back-button">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path
+                    d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
+            </svg>
+            返回主页面
+        </a>
+
+        <div class="header">
+            <h1 class="title">🌤️ 实时气象监测系统</h1>
+            <div class="city-selector">
+                <input type="text" id="cityInput" placeholder="输入城市名称" value="西安">
+                <button id="searchButton">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                        viewBox="0 0 16 16" style="margin-right:5px">
+                        <path
+                            d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
+                    </svg>
+                    查询天气
+                </button>
+            </div>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+        <div class="loading" id="loading">数据加载中... 🌱</div>
+
+        <div id="weatherChart"></div>
+
+        <div class="weather-info" id="weatherInfo">
+            <div class="info-card">
+                <div class="info-title">🌡️ 当前温度</div>
+                <div class="info-value" id="currentTemp">--℃</div>
+            </div>
+            <div class="info-card">
+                <div class="info-title">💧 空气湿度</div>
+                <div class="info-value" id="currentHumidity">--%</div>
+            </div>
+            <div class="info-card">
+                <div class="info-title">🌬️ 风力等级</div>
+                <div class="info-value" id="currentWind">--级</div>
+            </div>
+            <div class="info-card">
+                <div class="info-title">🌫️ 空气质量</div>
+                <div class="info-value" id="currentAQI">--</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 配置信息
+        const CONFIG = {
+            JUHE_API_KEY: "3f5f5fc500f1d26650c5b67ea225259e",
+            DEFAULT_CITY: "西安",
+            TIMEOUT: 10000, // 延长超时时间
+            PROXY_URL: "https://api.allorigins.win/raw?url=" // 使用可靠代理
+        };
+
+        // 图表初始化
+        let weatherChart = null;
+        function initChart() {
+            weatherChart = echarts.init(document.getElementById('weatherChart'));
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    formatter: function (params) {
+                        return `时间: ${params[0].name}<br>
+                        温度: ${params[0].value}℃<br>
+                        湿度: ${params[1].value}%`;
+                    }
+                },
+                legend: {
+                    data: ['温度', '湿度'],
+                    textStyle: { color: '#3d8c53' },
+                    bottom: 10
+                },
+                grid: {
+                    top: '15%',
+                    left: '5%',
+                    right: '5%',
+                    bottom: '15%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    data: [],
+                    axisLine: {
+                        lineStyle: {
+                            color: '#8bc34a',
+                            width: 2
+                        }
+                    }
+                },
+                yAxis: [
+                    {
+                        name: '温度 (℃)',
+                        type: 'value',
+                        axisLabel: { color: '#8bc34a' },
+                        splitLine: { show: false }
+                    },
+                    {
+                        name: '湿度 (%)',
+                        type: 'value',
+                        axisLabel: { color: '#4a90e2' },
+                        splitLine: { show: false }
+                    }
+                ],
+                series: [
+                    {
+                        name: '温度',
+                        type: 'line',
+                        smooth: true,
+                        data: [],
+                        itemStyle: { color: '#8bc34a' },
+                        areaStyle: {
+                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                { offset: 0, color: 'rgba(139, 195, 74, 0.3)' },
+                                { offset: 1, color: 'rgba(139, 195, 74, 0)' }
+                            ])
+                        }
+                    },
+                    {
+                        name: '湿度',
+                        type: 'line',
+                        yAxisIndex: 1,
+                        smooth: true,
+                        data: [],
+                        itemStyle: { color: '#4a90e2' }
+                    }
+                ]
+            };
+            weatherChart.setOption(option);
+        }
+
+        // 获取天气数据（使用代理）
+        async function fetchWeather(city) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), CONFIG.TIMEOUT);
+
+            try {
+                const apiUrl = `http://apis.juhe.cn/simpleWeather/query?city=${encodeURIComponent(city)}&key=${CONFIG.JUHE_API_KEY}`;
+                const proxyUrl = CONFIG.PROXY_URL + encodeURIComponent(apiUrl);
+
+                const response = await fetch(proxyUrl, {
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+
+                if (!response.ok) throw new Error(`HTTP错误 ${response.status}`);
+
+                const data = await response.json();
+                if (data.error_code !== 0) throw new Error(data.reason);
+
+                return {
+                    realtime: data.result.realtime,
+                    forecast: data.result.future
+                };
+            } catch (error) {
+                console.error('获取天气数据失败:', error);
+                throw new Error(error.name === 'AbortError' ? '请求超时，请重试' : '服务暂时不可用');
+            }
+        }
+
+        // 更新界面
+        function updateUI(data) {
+            // 更新实时数据
+            document.getElementById('currentTemp').textContent = `${data.realtime.temperature}℃`;
+            document.getElementById('currentHumidity').textContent = `${data.realtime.humidity}%`;
+            document.getElementById('currentWind').textContent = data.realtime.windPower;
+            document.getElementById('currentAQI').textContent = data.realtime.aqi || '--';
+
+            // 生成24小时预测数据
+            const hours = Array.from({ length: 24 }, (_, i) => `${i}:00`);
+            const temps = hours.map((_, index) => {
+                const baseTemp = parseFloat(data.realtime.temperature);
+                return Math.floor(baseTemp + Math.sin(index * Math.PI / 12) * 5);
+            });
+            const humids = hours.map((_, index) => {
+                const baseHumid = parseFloat(data.realtime.humidity);
+                return Math.floor(baseHumid + Math.cos(index * Math.PI / 6) * 10);
+            });
+
+            // 更新图表
+            weatherChart.setOption({
+                xAxis: { data: hours },
+                series: [
+                    { data: temps },
+                    { data: humids }
+                ]
+            });
+        }
+
+        // 显示错误信息
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => errorDiv.style.display = 'none', 3000);
+        }
+
+        // 初始化
+        window.onload = function () {
+            initChart();
+
+            // 绑定查询按钮事件
+            document.getElementById('searchButton').addEventListener('click', async () => {
+                const city = document.getElementById('cityInput').value.trim();
+                if (!city) {
+                    showError('请输入城市名称');
+                    return;
+                }
+
+                const loading = document.getElementById('loading');
+                try {
+                    loading.style.display = 'block';
+                    const data = await fetchWeather(city);
+                    updateUI(data);
+                } catch (error) {
+                    console.error('获取天气数据失败:', error);
+                    showError(error.message);
+                } finally {
+                    loading.style.display = 'none';
+                }
+            });
+
+            // 加载默认城市数据
+            (async () => {
+                const loading = document.getElementById('loading');
+                try {
+                    loading.style.display = 'block';
+                    const defaultData = await fetchWeather(CONFIG.DEFAULT_CITY);
+                    updateUI(defaultData);
+                } catch (error) {
+                    console.error('默认城市数据加载失败:', error);
+                    showError(error.message);
+                } finally {
+                    loading.style.display = 'none';
+                }
+            })();
+        };
+    </script>
+</body>
+
+</html>

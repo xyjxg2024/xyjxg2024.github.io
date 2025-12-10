@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能土壤分析系统</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.2/dist/echarts.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #2a6b3c;
+            --secondary-color: #8bc34a;
+            --background: linear-gradient(135deg, #f3f9f1 0%, #e6f4ea 100%);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: var(--background);
+            color: #333;
+        }
+
+        .dashboard {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* 返回按钮样式 */
+        .back-button {
+            background: var(--secondary-color);
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 15px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .back-button:hover {
+            background: #7cb342;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(139, 195, 74, 0.2);
+        }
+
+        .input-panel {
+            background: rgba(255, 255, 255, 0.98);
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .input-panel:hover {
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            transform: translateY(-5px);
+        }
+
+        .input-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .input-panel h3 {
+            color: var(--primary-color);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .input-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .input-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .input-field label {
+            color: var(--primary-color);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .input-field input {
+            padding: 0.8rem;
+            border: 2px solid #e0f0e5;
+            border-radius: 8px;
+            transition: all 0.3s;
+            font-size: 1rem;
+        }
+
+        .input-field input:focus {
+            border-color: var(--secondary-color);
+            outline: none;
+            box-shadow: 0 0 8px rgba(139, 195, 74, 0.3);
+        }
+
+        #analyzeBtn {
+            background: linear-gradient(45deg, var(--secondary-color), #7cb342);
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            font-size: 1rem;
+            font-weight: 500;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        #analyzeBtn:hover {
+            background: #7cb342;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        #analyzeBtn:disabled {
+            background: #e0e0e0;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .recommendation {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-top: 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .param-label {
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: inline-block;
+        }
+
+        .recommendation p {
+            line-height: 1.6;
+            color: #444;
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard">
+        <div class="input-panel">
+            <div class="input-header">
+                <h3>🔍 手动输入土壤参数</h3>
+                <a href="grow.html" class="back-button">
+                    ← 返回上一页
+                </a>
+            </div>
+            <div class="input-group">
+                <div class="input-field">
+                    <label>🌱 有机质含量 (%)</label>
+                    <input type="number" id="inputOrganic" step="0.1" min="0" max="10" placeholder="2.5-3.5%为正常范围">
+                </div>
+                <div class="input-field">
+                    <label>⚖️ pH值</label>
+                    <input type="number" id="inputPH" step="0.1" min="3" max="10" placeholder="5.5-7.5为理想范围">
+                </div>
+                <div class="input-field">
+                    <label>🔄 电导率 (mS/cm)</label>
+                    <input type="number" id="inputConductivity" step="0.1" min="0" placeholder="0.8-1.6为正常范围">
+                </div>
+                <div class="input-field">
+                    <label>💧 含水量 (%)</label>
+                    <input type="number" id="inputWater" min="0" max="100" placeholder="50-75%为理想范围">
+                </div>
+            </div>
+            <button id="analyzeBtn" onclick="analyzeSoil()">开始智能分析</button>
+        </div>
+
+        <div class="recommendation">
+            <div class="param-label">🤖 AI分析结果</div>
+            <p id="adviceContent">请填写土壤参数后点击"开始智能分析"按钮获取结果</p>
+        </div>
+    </div>
+
+    <script>
+        // 智谱API配置
+        const ZHIPU_API_KEY = 'cf8a07f6e12a4fce92084bbe9affb10c.UvQ1v2oB4Q1jwZkD';
+        const ZHIPU_API_URL = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
+
+        async function analyzeSoil() {
+            const inputs = {
+                organic: parseFloat(document.getElementById('inputOrganic').value),
+                ph: parseFloat(document.getElementById('inputPH').value),
+                conductivity: parseFloat(document.getElementById('inputConductivity').value),
+                water: parseFloat(document.getElementById('inputWater').value)
+            };
+
+            if (!validateInputs(inputs)) return;
+
+            const prompt = `作为农业专家，请分析以下土壤参数并给出专业建议：
+            - 有机质含量：${inputs.organic}%
+            - pH值：${inputs.ph}
+            - 电导率：${inputs.conductivity}mS/cm
+            - 含水量：${inputs.water}%
+            
+            请用中文回答，包含以下方面：
+            1. 土壤健康评估（0-100分）
+            2. 主要问题分析
+            3. 具体改良建议
+            4. 适宜种植作物推荐
+            使用Markdown格式，包含分级标题和重点强调`;
+
+            try {
+                const btn = document.getElementById('analyzeBtn');
+                btn.disabled = true;
+                btn.innerHTML = '分析中...';
+
+                const response = await fetch(ZHIPU_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${ZHIPU_API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: "glm-4",
+                        messages: [{ role: "user", content: prompt }],
+                        temperature: 0.3
+                    })
+                });
+
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error.message);
+
+                const result = data.choices[0].message.content;
+                displayAnalysisResult(result);
+            } catch (error) {
+                showError(`分析失败: ${error.message}`);
+            } finally {
+                document.getElementById('analyzeBtn').disabled = false;
+                document.getElementById('analyzeBtn').innerHTML = '开始智能分析';
+            }
+        }
+
+        function validateInputs(inputs) {
+            const errors = [];
+            if (isNaN(inputs.organic)) errors.push('请输入有效的有机质含量');
+            if (inputs.ph < 3 || inputs.ph > 10) errors.push('pH值应在3-10之间');
+            if (isNaN(inputs.conductivity)) errors.push('请输入有效的电导率');
+            if (inputs.water < 0 || inputs.water > 100) errors.push('含水量应在0-100%之间');
+
+            if (errors.length > 0) {
+                showError(errors.join('<br>'));
+                return false;
+            }
+            return true;
+        }
+
+        function displayAnalysisResult(result) {
+            const formattedResult = result
+                .replace(/#{1,6}/g, '')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\n/g, '<br>');
+
+            document.getElementById('adviceContent').innerHTML = formattedResult;
+        }
+
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error';
+            errorDiv.innerHTML = `⚠️ ${message}`;
+            document.querySelector('.dashboard').prepend(errorDiv);
+            setTimeout(() => errorDiv.remove(), 5000);
+        }
+    </script>
+</body>
+
+</html>
